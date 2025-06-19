@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart Medical App</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", sans-serif;
+      background: #f1f1f1;
+    }
+
+    header {
+      background-color: #007bff;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    nav {
+      display: flex;
+      justify-content: space-around;
+      background-color: #0056b3;
+      padding: 0.5rem 0;
+      flex-wrap: wrap;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      padding: 0.5rem;
+    }
+
+    nav a:hover {
+      background-color: #003f7f;
+      border-radius: 5px;
+    }
+
+    section {
+      display: none;
+      padding: 1rem;
+      background-color: white;
+      margin: 1rem;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+
+    section.active {
+      display: block;
+    }
+
+    h2 {
+      color: #007bff;
+    }
+
+    button {
+      padding: 10px;
+      background-color: #28a745;
+      border: none;
+      color: white;
+      border-radius: 5px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #218838;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 5px;
+      margin-top: 10px;
+      border: 1px solid #ccc;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      border-bottom: 1px solid #eee;
+      padding: 0.5rem 0;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #323232;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      display: none;
+      z-index: 200;
+    }
+
+    #qrcode-container {
+      margin-top: 10px;
+    }
+
+    footer {
+      background-color: #333;
+      color: white;
+      text-align: center;
+      padding: 1rem;
+      margin-top: 2rem;
+    }
+
+    @media (max-width: 600px) {
+      nav a {
+        flex: 1 1 100%;
+        text-align: center;
+        padding: 0.7rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Smart Medical App</h1>
+  </header>
+
+  <nav>
+    <a href="#" onclick="showSection('dashboard')">Dashboard</a>
+    <a href="#" onclick="showSection('records')">Records</a>
+    <a href="#" onclick="showSection('messages')">Messages</a>
+    <a href="#" onclick="showSection('emergency')">Emergency</a>
+    <a href="#" onclick="showSection('settings')">Settings</a>
+  </nav>
+
+  <main>
+    <section id="dashboard" class="active">
+      <h2>Dashboard</h2>
+      <ul id="reminders"></ul>
+      <button onclick="showSection('records')">View Records</button>
+    </section>
+
+    <section id="records">
+      <h2>Health Records</h2>
+      <ul id="prescriptions"></ul>
+      <ul id="reports"></ul>
+    </section>
+
+    <section id="messages">
+      <h2>Messages</h2>
+      <ul id="message-list"></ul>
+      <textarea id="message-input" placeholder="Type a message..."></textarea>
+      <button onclick="sendMessage()">Send</button>
+    </section>
+
+    <section id="emergency">
+      <h2>Emergency Info</h2>
+      <p><strong>Contact:</strong> Dr. Smith - 9876543210</p>
+      <p><strong>Allergies:</strong> Penicillin</p>
+      <p><strong>Chronic Diseases:</strong> Hypertension</p>
+      <button onclick="generateQRCode()">Generate QR Code</button>
+      <div id="qrcode-container"></div>
+    </section>
+
+    <section id="settings">
+      <h2>Settings</h2>
+      <div style="margin-top: 20px;">
+        <button onclick="logout()" style="padding: 10px 20px; background-color: #dc3545; color: white; border: none; border-radius: 5px;">Logout</button>
+    </div>
+    
+      <label for="font-size">Font Size:</label>
+      <select id="font-size" onchange="changeFontSize()">
+        <option value="1em">Medium</option>
+        <option value="0.85em">Small</option>
+        <option value="1.2em">Large</option>
+      </select>
+    </section>
+  </main>
+  <div id="login-screen" style="display: none; padding: 20px;">
+    <h2>Login</h2>
+    <input type="text" id="username" placeholder="Username" style="display: block; margin-bottom: 10px; padding: 10px; width: 100%;">
+    <input type="password" id="password" placeholder="Password" style="display: block; margin-bottom: 10px; padding: 10px; width: 100%;">
+    <button onclick="login()" style="padding: 10px 20px;">Login</button>
+</div>
+
+  <footer>
+    &copy; 2025 Smart Medical App
+  </footer>
+
+  <div class="toast" id="toast">Action completed</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+  <script>
+    function showSection(id) {
+      document.querySelectorAll("section").forEach(s => s.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+    }
+
+    function sendMessage() {
+      const input = document.getElementById("message-input");
+      const message = input.value.trim();
+      if (message !== "") {
+        const list = document.getElementById("message-list");
+        const li = document.createElement("li");
+        li.textContent = `You: ${message}`;
+        list.appendChild(li);
+        input.value = "";
+        showToast("Message sent");
+      }
+    }
+
+    function generateQRCode() {
+      const container = document.getElementById("qrcode-container");
+      container.innerHTML = "";
+      const info = "Contact: Dr. Smith - 9876543210, Allergies: Penicillin, Chronic: Hypertension";
+      new QRCode(container, {
+        text: info,
+        width: 150,
+        height: 150
+      });
+      showToast("QR Code generated");
+    }
+
+    function changeFontSize() {
+      const size = document.getElementById("font-size").value;
+      document.body.style.fontSize = size;
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      toast.textContent = msg;
+      toast.style.display = "block";
+      setTimeout(() => toast.style.display = "none", 2000);
+    }
+
+    // Load Sample Data
+    document.addEventListener("DOMContentLoaded", () => {
+      const reminders = ["Take Medicine at 9AM", "Doctor Appointment at 5PM"];
+      reminders.forEach(item => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        document.getElementById("reminders").appendChild(li);
+      });
+
+      const prescriptions = ["Paracetamol 500mg", "Aspirin 75mg"];
+      prescriptions.forEach(p => {
+        const li = document.createElement("li");
+        li.textContent = `Prescription: ${p}`;
+        document.getElementById("prescriptions").appendChild(li);
+      });
+
+      const reports = ["Blood Test - 2025-04-01", "X-Ray - 2025-03-15"];
+      reports.forEach(r => {
+        const li = document.createElement("li");
+        li.textContent = `Report: ${r}`;
+        document.getElementById("reports").appendChild(li);
+      });
+    });
+    function login() {
+    const user = document.getElementById('username').value;
+    const pass = document.getElementById('password').value;
+
+    // Dummy login - accepts anything non-empty
+    if (user && pass) {
+        localStorage.setItem('loggedIn', 'true');
+        showApp();
+    } else {
+        alert('Please enter username and password.');
+    }
+}
+
+function logout() {
+    localStorage.removeItem('loggedIn');
+    showLogin();
+}
+
+function showLogin() {
+    document.querySelector('main').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'block';
+    document.querySelector('header').style.display = 'none';
+    document.querySelector('footer').style.display = 'none';
+}
+
+function showApp() {
+    document.querySelector('main').style.display = 'block';
+    document.getElementById('login-screen').style.display = 'none';
+    document.querySelector('header').style.display = 'block';
+    document.querySelector('footer').style.display = 'block';
+}
+
+// On page load
+document.addEventListener('DOMContentLoaded', function () {
+    if (localStorage.getItem('loggedIn') === 'true') {
+        showApp();
+    } else {
+        showLogin();
+    }
+
+    // Your existing data loading code here...
+});
+
+  </script>
+</body>
+</html>
+
